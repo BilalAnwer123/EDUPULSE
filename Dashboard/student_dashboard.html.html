@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Student Performance Dashboard</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1c2330;--muted:#667085;--line:#e4e7ec;--pass:#2e9e6b;--fail:#d9534f;--accent:#3b6fd4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151b;--card:#1b2029;--text:#e8ebf0;--muted:#9aa3b2;--line:#2a3140;--pass:#4cc38a;--fail:#ef6f6b;--accent:#6f98f0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12151b;--card:#1b2029;--text:#e8ebf0;--muted:#9aa3b2;--line:#2a3140;--pass:#4cc38a;--fail:#ef6f6b;--accent:#6f98f0;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;line-height:1.4}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 32px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.kpi b{display:block;font-size:26px}
+.kpi span{color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:14px}
+h2{font-size:15px;margin:0 0 2px}
+.note{color:var(--muted);font-size:12px;margin:0 0 10px}
+.box{position:relative;height:270px}
+.insight{margin-top:14px;font-size:13px}
+</style>
+</head>
+<body>
+<main>
+<h1>Student Performance Dashboard</h1>
+
+<div class="kpis">
+<div class="card kpi"><b>600</b><span>Students</span></div>
+<div class="card kpi"><b style="color:var(--pass)">495</b><span>Pass (82.5%)</span></div>
+<div class="card kpi"><b style="color:var(--fail)">105</b><span>Fail (17.5%)</span></div>
+<div class="card kpi"><b>77.7%</b><span>Average attendance</span></div>
+</div>
+
+<div class="grid">
+<div class="card"><h2>Pass vs. fail</h2><p class="note">Share of students by final result</p><div class="box"><canvas id="c1"></canvas></div></div>
+<div class="card"><h2>Fail rate by attendance</h2><p class="note">% of students who failed, by attendance band</p><div class="box"><canvas id="c2"></canvas></div></div>
+<div class="card"><h2>Fail rate by quiz average</h2><p class="note">% of students who failed, by quiz score band (out of 10)</p><div class="box"><canvas id="c3"></canvas></div></div>
+<div class="card"><h2>Performance profile: pass vs. fail</h2><p class="note">Average score as % of the maximum possible</p><div class="box"><canvas id="c4"></canvas></div></div>
+</div>
+
+<div class="card insight"><b>Key takeaways.</b> Attendance and quiz performance are the strongest warning signals: students below 60% attendance fail about 52% of the time, versus about 6% at 90% or above. Students averaging under 4 on quizzes fail about 42% of the time. Failing students trail passing students on every measure, with the widest gaps in quizzes and mid marks.</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+var charts=[];
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function build(){
+  charts.forEach(function(c){c.destroy();});charts=[];
+  var t=css('--text'),m=css('--muted'),ln=css('--line'),P=css('--pass'),F=css('--fail'),A=css('--accent');
+  Chart.defaults.color=m;Chart.defaults.font.family='Arial,Helvetica,sans-serif';
+  var base={responsive:true,maintainAspectRatio:false};
+  var yPct={beginAtZero:true,grid:{color:ln},ticks:{callback:function(v){return v+'%';}}};
+  var xs={grid:{display:false}};
+
+  charts.push(new Chart('c1',{type:'doughnut',data:{labels:['Pass','Fail'],datasets:[{data:[495,105],backgroundColor:[P,F],borderColor:css('--card'),borderWidth:3}]},
+    options:Object.assign({},base,{cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:t}}}})}));
+
+  function rate(id,labels,vals,counts,xt){
+    charts.push(new Chart(id,{type:'bar',data:{labels:labels,datasets:[{label:'Fail rate',data:vals,backgroundColor:vals.map(function(v){return v>=30?F:A;}),borderRadius:4}]},
+      options:Object.assign({},base,{plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y+'% failed (n = '+counts[c.dataIndex]+')';}}}},
+      scales:{y:yPct,x:Object.assign({},xs,{title:{display:true,text:xt,color:m}})}})}));
+  }
+  rate('c2',['<60','60–69','70–79','80–89','90+'],[52.5,23.6,18.1,10.1,6.3],[40,106,210,149,95],'Attendance (%)');
+  rate('c3',['<4','4–5.5','5.5–7','7–8.5','8.5+'],[42.4,32.4,15.4,7.8,2.6],[59,108,201,154,78],'Quiz average (out of 10)');
+
+  charts.push(new Chart('c4',{type:'bar',data:{labels:['Attendance','Quizzes','Assignments','Mid marks','Lab marks','Prev. CGPA'],
+    datasets:[{label:'Pass',data:[79.3,66.8,72.6,62.5,76.0,71.0],backgroundColor:P,borderRadius:3},
+              {label:'Fail',data:[70.6,52.8,66.1,49.9,69.8,62.0],backgroundColor:F,borderRadius:3}]},
+    options:Object.assign({},base,{plugins:{legend:{position:'bottom',labels:{color:t}},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+'% of max';}}}},
+    scales:{y:Object.assign({},yPct,{max:100}),x:xs}})}));
+}
+build();
+if(window.matchMedia){window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',build);}
+</script>
+</body>
+</html>
