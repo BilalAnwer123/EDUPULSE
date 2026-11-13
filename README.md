@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Student Risk System
 
 Early-warning tool that shows student performance patterns and predicts whether a student is at risk of failing.
@@ -28,3 +29,6 @@ The charts load a small library from the internet the first time, so connect to 
 - Required columns: student_id, attendance_pct, quiz_avg, assignment_avg, mid_marks, lab_marks, study_hours_week, prev_cgpa, part_time_job (Yes/No), final_result (Pass/Fail).
 - A student is flagged as at risk when the predicted probability of failing is 50% or more.
 - The prediction is an estimate from past data. Use it together with a teacher's or advisor's judgement.
+=======
+# EDUPULSE
+>>>>>>> 802be48805c88b102e4f0b97dd7e85549cb013db
